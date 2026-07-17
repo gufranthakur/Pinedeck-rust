@@ -6,7 +6,7 @@ use core::window::{AppState, PineDeck};
 mod panels;
 
 fn main() -> eframe::Result {
-    let native_options: NativeOptions = eframe::NativeOptions::default();
+    let native_options: NativeOptions = NativeOptions::default();
 
     eframe::run_native(
         "Pinedeck",
