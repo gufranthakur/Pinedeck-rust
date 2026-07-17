@@ -1,0 +1,207 @@
+//! ================================================================
+//! EGUI 0.31+ UI COMPONENT CHEATSHEET (plain egui, no Bevy)
+//! Margin / CornerRadius / Shadow use integers (u8/i8), not f32.
+//!   Correct: Margin::same(12)      Wrong: Margin::same(12.0)
+//!   Correct: CornerRadius::same(6) Wrong: CornerRadius::same(6.0)
+//! Rounding -> renamed CornerRadius. .rounding() -> .corner_radius()
+//! ================================================================
+
+// =================================================================
+// TEXT / LABELS
+// =================================================================
+ui.heading("Heading text");                     // TextStyle::Heading
+ui.label("Plain label");
+ui.label(
+    egui::RichText::new("Styled text")
+        .color(egui::Color32::LIGHT_GREEN)
+        .size(16.0)
+        .strong()          // bold
+        .italics()
+        .underline()
+        .strikethrough()
+        .code()            // monospace, code-block look
+        .monospace()
+        .background_color(egui::Color32::DARK_GRAY),
+);
+ui.colored_label(egui::Color32::from_rgb(255, 140, 0), "Colored label shorthand");
+ui.hyperlink_to("Link text", "https://example.com");
+ui.separator();      // horizontal divider line
+ui.add_space(8.0);   // manual gap
+
+// =================================================================
+// BUTTONS
+// =================================================================
+if ui.button("Plain button").clicked() { /* ... */ }
+
+if ui.add(
+    egui::Button::new(egui::RichText::new("Styled Button").color(egui::Color32::WHITE))
+        .fill(egui::Color32::from_rgb(70, 130, 180))
+        .corner_radius(egui::CornerRadius::same(6))
+        .stroke(egui::Stroke::new(1.0, egui::Color32::WHITE))
+        .min_size(egui::vec2(160.0, 30.0)),
+).clicked() { /* ... */ }
+
+ui.add_enabled(false, egui::Button::new("Disabled"));  // grey out + block clicks
+ui.add(egui::Button::new("Small").small());             // compact, no v-padding
+
+// =================================================================
+// TOGGLES / SELECTION
+// =================================================================
+let mut checked = false;
+ui.checkbox(&mut checked, "Enable feature");
+
+#[derive(PartialEq)]
+enum Mode { A, B, C }
+let mut mode = Mode::A;
+ui.horizontal(|ui| {
+    ui.radio_value(&mut mode, Mode::A, "A");
+    ui.radio_value(&mut mode, Mode::B, "B");
+    ui.radio_value(&mut mode, Mode::C, "C");
+});
+
+let mut is_selected = false;
+if ui.selectable_label(is_selected, "Selectable row").clicked() {
+    is_selected = !is_selected;
+}
+
+// ComboBox (dropdown) — id_salt-like uniqueness via from_label/from_id_salt
+let mut selected = "Option A".to_string();
+egui::ComboBox::from_label("Choose")
+    .selected_text(&selected)
+    .width(180.0)
+    .show_ui(ui, |ui| {
+        ui.selectable_value(&mut selected, "Option A".to_string(), "Option A");
+        ui.selectable_value(&mut selected, "Option B".to_string(), "Option B");
+    });
+
+// =================================================================
+// NUMERIC / VALUE INPUT
+// =================================================================
+let mut volume: f32 = 50.0;
+ui.add(
+    egui::Slider::new(&mut volume, 0.0..=100.0)
+        .text("Volume")
+        .clamping(egui::SliderClamping::Always)
+        .step_by(1.0),
+);
+
+let mut count: i32 = 0;
+ui.add(egui::DragValue::new(&mut count).speed(1.0).range(0..=100));
+
+// =================================================================
+// TEXT INPUT
+// =================================================================
+let mut text = String::new();
+ui.add(
+    egui::TextEdit::singleline(&mut text)
+        .hint_text("Type here...")
+        .desired_width(200.0),
+);
+ui.add(egui::TextEdit::multiline(&mut text).desired_rows(4));
+
+// =================================================================
+// PROGRESS / LOADING
+// =================================================================
+ui.add(egui::ProgressBar::new(0.6).text("60%").animate(true));
+ui.add(egui::Spinner::new().size(24.0));
+
+// =================================================================
+// CONTAINERS / GROUPING
+// =================================================================
+ui.collapsing("Advanced settings", |ui| {
+    ui.label("Nested content, collapsed by default");   // accordion / TitledPane
+});
+
+ui.group(|ui| {
+    ui.label("Grouped content with a default border");  // simple bordered box
+});
+
+egui::Frame::default()                                   // custom-styled sub-region
+    .inner_margin(egui::Margin::same(10))
+    .fill(egui::Color32::from_rgb(45, 45, 50))
+    .stroke(egui::Stroke::new(1.0, egui::Color32::GRAY))
+    .corner_radius(egui::CornerRadius::same(6))
+    .show(ui, |ui| {
+        ui.label("Boxed sub-section, like a bordered VBox");
+        ui.button("Nested button");
+    });
+
+// =================================================================
+// LAYOUT
+// =================================================================
+ui.horizontal(|ui| {  ui.label("Row:"); ui.button("A"); ui.button("B"); });
+ui.vertical(|ui|   {  ui.label("Column:"); ui.button("C"); ui.button("D"); });
+ui.horizontal_wrapped(|ui| { for i in 0..10 { ui.button(format!("Item {i}")); } });
+
+ui.columns(2, |columns| {
+    columns[0].label("Left column");
+    columns[1].label("Right column");
+});
+
+egui::Grid::new("my_grid")           // like GridPane
+    .num_columns(2)
+    .spacing([20.0, 8.0])
+    .striped(true)
+    .show(ui, |ui| {
+        ui.label("Name:"); ui.text_edit_singleline(&mut text); ui.end_row();
+        ui.label("Age:");  ui.add(egui::DragValue::new(&mut count)); ui.end_row();
+    });
+
+egui::ScrollArea::vertical()          // like ScrollPane
+    .max_height(150.0)
+    .show(ui, |ui| { for i in 0..30 { ui.label(format!("Row {i}")); } });
+
+// =================================================================
+// PANELS (docked regions — call in this order: Top/Bottom/Side, THEN Central)
+// =================================================================
+egui::TopBottomPanel::top("top_bar")
+    .frame(egui::Frame::default().inner_margin(egui::Margin::same(6)))
+    .show(ctx, |ui| { ui.horizontal(|ui| { ui.label("File"); ui.label("Edit"); }); });
+
+egui::SidePanel::right("right_panel")
+    .resizable(true)
+    .default_width(220.0)
+    .min_width(150.0)
+    .max_width(400.0)
+    // .exact_width(220.0)   // shorthand: locks min==max==default, non-resizable
+    .show_separator_line(true)
+    .frame(
+        egui::Frame::default()
+            .inner_margin(egui::Margin::same(12))
+            .fill(egui::Color32::from_rgb(30, 30, 35))
+            .stroke(egui::Stroke::new(1.0, egui::Color32::GRAY))
+            .corner_radius(egui::CornerRadius::ZERO),
+    )
+    .show(ctx, |ui| { /* content */ });
+
+egui::CentralPanel::default().show(ctx, |ui| {
+    ui.heading("Central content area");   // takes whatever space is left
+});
+
+// =================================================================
+// GLOBAL STYLE (set once, e.g. at app startup)
+// =================================================================
+let mut style = (*ctx.style()).clone();
+
+style.spacing.item_spacing = egui::vec2(8.0, 10.0);   // gap between widgets
+style.spacing.button_padding = egui::vec2(10.0, 6.0);
+style.spacing.window_margin = egui::Margin::same(10);
+style.spacing.indent = 18.0;
+
+style.visuals.widgets.inactive.weak_bg_fill = egui::Color32::from_rgb(60, 60, 65); // idle
+style.visuals.widgets.hovered.weak_bg_fill  = egui::Color32::from_rgb(80, 80, 90); // hover
+style.visuals.widgets.active.weak_bg_fill   = egui::Color32::from_rgb(40, 40, 45); // pressed
+style.visuals.widgets.inactive.corner_radius = egui::CornerRadius::same(4);
+style.visuals.widgets.inactive.bg_stroke = egui::Stroke::new(1.0, egui::Color32::DARK_GRAY);
+
+style.visuals.window_corner_radius = egui::CornerRadius::same(8);
+style.visuals.window_fill = egui::Color32::from_rgb(27, 27, 30);
+style.visuals.panel_fill  = egui::Color32::from_rgb(24, 24, 27);
+style.visuals.selection.bg_fill = egui::Color32::from_rgb(70, 130, 180);
+
+use egui::{FontFamily, FontId, TextStyle};
+style.text_styles.insert(TextStyle::Heading, FontId::new(22.0, FontFamily::Proportional));
+style.text_styles.insert(TextStyle::Body,    FontId::new(14.0, FontFamily::Proportional));
+style.text_styles.insert(TextStyle::Button,  FontId::new(14.0, FontFamily::Proportional));
+
+ctx.set_style(style);
