@@ -1,6 +1,5 @@
-use crate::PineDeck;
-use eframe::egui;
+use crate::{PineDeck};
 
-pub fn render(ui: &mut egui::Ui, pinedeck: &mut PineDeck) {
-    ui.label("Oh well");
+pub fn render(ui: &mut egui::Ui, pine_deck: &mut PineDeck) {
+    
 }

@@ -1,2 +1,4 @@
-pub mod dashboard;
 pub mod home;
+pub mod navigation;
+
+pub mod dashboard;

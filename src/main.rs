@@ -1,7 +1,10 @@
 use eframe::{NativeOptions, egui};
+use egui::accesskit::Role::Switch;
 
 mod core;
 use core::window::{AppState, PineDeck};
+
+use crate::core::window::AppState::{DashboardScreen, FilesScreen, TerminalScreen};
 
 mod panels;
 
@@ -17,13 +20,15 @@ fn main() -> eframe::Result {
 
 impl eframe::App for PineDeck {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        match &self.app_state {
-            AppState::HomeScreen => {
-                panels::home::render(ui, self);
-            }
-            AppState::DashboardScreen => {
-                panels::dashboard::render(ui, self);
-            }
+        if self.is_connected_to_board == false {
+            panels::home::render(ui, self);
+        } else {
+            panels::navigation::render(ui, self);
+        }
+
+        match self.app_state {
+            DashboardScreen => panels::dashboard::render(ui, self),
+            _ => {}
         }
     }
 }
